@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Driver {
+  id          String   @id @default(cuid())
+  name        String
+  nationality String
+  dateOfBirth DateTime
+  teamId      String?
+  team        Team?    @relation(fields: [teamId], references: [id])
+  
+  // Performance metrics
+  marketValue     Float   @default(0)
+  performanceScore Float  @default(0)
+  totalRaces      Int     @default(0)
+  totalWins       Int     @default(0)
+  totalPodiums    Int     @default(0)
+  totalPoints     Int     @default(0)
+  
+  // NFT metadata
+  nftTokenId      String?
+  nftContractAddress String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  performanceMetrics PerformanceMetric[]
+  
+  @@map("drivers")
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  teamConstructor String
+  nationality String
+  
+  // Financial metrics
+  budget       Float @default(0)
+  sponsorValue Float @default(0)
+  
+  // NFT metadata
+  nftTokenId      String?
+  nftContractAddress String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  drivers Driver[]
+  
+  @@map("teams")
+}
+
+model PerformanceMetric {
+  id        String   @id @default(cuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  
+  // Race details
+  raceId       String
+  raceName     String
+  season       Int
+  raceDate     DateTime
+  
+  // Performance data
+  position     Int?
+  points       Int     @default(0)
+  fastestLap   Boolean @default(false)
+  polePosition Boolean @default(false)
+  
+  // Detailed metrics
+  lapTime      String?
+  gapToLeader  String?
+  overtakes    Int      @default(0)
+  pitStops     Int      @default(0)
+  
+  // Verification
+  attested     Boolean @default(false)
+  attestationHash String?
+  attestedBy   String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([driverId, raceId])
+  @@map("performance_metrics")
+}
+
