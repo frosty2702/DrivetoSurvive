@@ -7,8 +7,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import fastf1
 import fastf1.plotting
-from typing import Optional
+from typing import Optional, List, Dict
 import os
+import pandas as pd
+from datetime import datetime
+import asyncio
+import aiohttp
 
 # Enable FastF1 cache for performance
 cache_dir = os.path.join(os.path.dirname(__file__), ".fastf1_cache")
@@ -204,6 +208,153 @@ def get_session_info(year: int, round_number: int, session_type: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch session: {str(e)}")
+
+@app.get("/championship-standings/{year}")
+def get_championship_standings(year: int):
+    """Get current championship standings for drivers and constructors"""
+    try:
+        # Get driver standings
+        driver_standings = fastf1.api.standings.get_driver_standings(year)
+        constructor_standings = fastf1.api.standings.get_constructor_standings(year)
+        
+        return {
+            "year": year,
+            "driver_standings": driver_standings.to_dict('records') if not driver_standings.empty else [],
+            "constructor_standings": constructor_standings.to_dict('records') if not constructor_standings.empty else []
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch standings: {str(e)}")
+
+@app.get("/driver-performance/{year}")
+def get_driver_performance_metrics(year: int):
+    """Get comprehensive driver performance metrics for the season"""
+    try:
+        # Get all races for the year
+        schedule = fastf1.get_event_schedule(year)
+        performance_data = []
+        
+        for _, race in schedule.iterrows():
+            if race['EventFormat'] == 'conventional':
+                try:
+                    session = fastf1.get_session(year, race['RoundNumber'], 'R')
+                    session.load()
+                    
+                    # Calculate performance metrics for each driver
+                    for driver_abbr in session.drivers:
+                        driver_laps = session.laps.pick_driver(driver_abbr)
+                        if not driver_laps.empty:
+                            fastest_lap = driver_laps.pick_fastest()
+                            avg_lap_time = driver_laps['LapTime'].mean()
+                            consistency = 1 - (driver_laps['LapTime'].std() / avg_lap_time) if avg_lap_time else 0
+                            
+                            # Get race position
+                            results = session.results
+                            driver_result = results[results['Abbreviation'] == driver_abbr]
+                            position = int(driver_result['Position'].iloc[0]) if not driver_result.empty else None
+                            
+                            performance_data.append({
+                                "year": year,
+                                "round": race['RoundNumber'],
+                                "event_name": race['EventName'],
+                                "driver": driver_abbr,
+                                "driver_name": driver_result['FullName'].iloc[0] if not driver_result.empty else driver_abbr,
+                                "team": driver_result['TeamName'].iloc[0] if not driver_result.empty else "Unknown",
+                                "position": position,
+                                "points": float(driver_result['Points'].iloc[0]) if not driver_result.empty and not pd.isna(driver_result['Points'].iloc[0]) else 0,
+                                "fastest_lap_time": str(fastest_lap['LapTime']) if fastest_lap is not None else None,
+                                "average_lap_time": str(avg_lap_time) if avg_lap_time else None,
+                                "consistency_score": float(consistency) if consistency else 0,
+                                "laps_completed": len(driver_laps),
+                                "total_race_time": str(driver_laps['LapTime'].sum()) if not driver_laps.empty else None
+                            })
+                except Exception as e:
+                    # Skip races with no data
+                    continue
+        
+        return {
+            "year": year,
+            "total_races": len(schedule),
+            "performance_data": performance_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch performance metrics: {str(e)}")
+
+@app.get("/race-calendar/{year}")
+def get_race_calendar(year: int):
+    """Get the complete race calendar for a year"""
+    try:
+        schedule = fastf1.get_event_schedule(year)
+        
+        calendar = []
+        for _, event in schedule.iterrows():
+            calendar.append({
+                "round": int(event['RoundNumber']),
+                "event_name": event['EventName'],
+                "location": event['Location'],
+                "country": event['Country'],
+                "event_format": event['EventFormat'],
+                "date_start": str(event['EventDate']),
+                "f1_support_series": event['F1SupportSeries']
+            })
+        
+        return {
+            "year": year,
+            "total_events": len(calendar),
+            "calendar": calendar
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch race calendar: {str(e)}")
+
+@app.get("/team-analysis/{year}")
+def get_team_analysis(year: int):
+    """Get comprehensive team performance analysis"""
+    try:
+        # Get all races for analysis
+        schedule = fastf1.get_event_schedule(year)
+        team_data = {}
+        
+        for _, race in schedule.iterrows():
+            if race['EventFormat'] == 'conventional':
+                try:
+                    session = fastf1.get_session(year, race['RoundNumber'], 'R')
+                    session.load()
+                    
+                    results = session.results
+                    for _, driver in results.iterrows():
+                        team_name = driver['TeamName']
+                        if team_name not in team_data:
+                            team_data[team_name] = {
+                                "team_name": team_name,
+                                "races": 0,
+                                "total_points": 0,
+                                "drivers": set(),
+                                "positions": [],
+                                "fastest_laps": 0
+                            }
+                        
+                        team_data[team_name]["races"] += 1
+                        team_data[team_name]["total_points"] += float(driver['Points']) if not pd.isna(driver['Points']) else 0
+                        team_data[team_name]["drivers"].add(driver['FullName'])
+                        team_data[team_name]["positions"].append(int(driver['Position']) if not pd.isna(driver['Position']) else None)
+                        
+                        # Check for fastest lap
+                        if driver.get('FastestLap', False):
+                            team_data[team_name]["fastest_laps"] += 1
+                            
+                except Exception:
+                    continue
+        
+        # Convert sets to lists and calculate averages
+        for team in team_data.values():
+            team["drivers"] = list(team["drivers"])
+            team["avg_position"] = sum(p for p in team["positions"] if p is not None) / len([p for p in team["positions"] if p is not None]) if team["positions"] else None
+        
+        return {
+            "year": year,
+            "teams": list(team_data.values())
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch team analysis: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
