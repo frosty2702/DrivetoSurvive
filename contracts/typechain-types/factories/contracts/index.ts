@@ -2,4 +2,16 @@
 /* tslint:disable */
 /* eslint-disable */
 export { DriverNFT__factory } from "./DriverNFT__factory";
+export { FanRewards__factory } from "./FanRewards__factory";
+export { FinancialFairPlay__factory } from "./FinancialFairPlay__factory";
+export { MockPerformanceOracle__factory } from "./MockPerformanceOracle__factory";
+export { MockPyth__factory } from "./MockPyth__factory";
+export { MockUSDC__factory } from "./MockUSDC__factory";
+export { PerformanceOracle__factory } from "./PerformanceOracle__factory";
+export { ProofNFT__factory } from "./ProofNFT__factory";
+export { SimplePerformanceOracle__factory } from "./SimplePerformanceOracle__factory";
+export { SponsorEscrow__factory } from "./SponsorEscrow__factory";
+export { SponsorPool__factory } from "./SponsorPool__factory";
 export { TeamNFT__factory } from "./TeamNFT__factory";
+export { TeamRecruitment__factory } from "./TeamRecruitment__factory";
+export { ValuationOracle__factory } from "./ValuationOracle__factory";

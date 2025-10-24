@@ -34,6 +34,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC4906__factory>;
     getContractFactory(
+      name: "ERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20__factory>;
+    getContractFactory(
+      name: "IERC20Metadata",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Metadata__factory>;
+    getContractFactory(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
       name: "ERC721",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC721__factory>;
@@ -66,17 +78,77 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SafeCast__factory>;
     getContractFactory(
+      name: "ReentrancyGuard",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ReentrancyGuard__factory>;
+    getContractFactory(
       name: "Strings",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Strings__factory>;
+    getContractFactory(
+      name: "IPyth",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IPyth__factory>;
+    getContractFactory(
+      name: "IPythEvents",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IPythEvents__factory>;
     getContractFactory(
       name: "DriverNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DriverNFT__factory>;
     getContractFactory(
+      name: "FanRewards",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FanRewards__factory>;
+    getContractFactory(
+      name: "FinancialFairPlay",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FinancialFairPlay__factory>;
+    getContractFactory(
+      name: "MockPerformanceOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockPerformanceOracle__factory>;
+    getContractFactory(
+      name: "MockPyth",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockPyth__factory>;
+    getContractFactory(
+      name: "MockUSDC",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockUSDC__factory>;
+    getContractFactory(
+      name: "PerformanceOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PerformanceOracle__factory>;
+    getContractFactory(
+      name: "ProofNFT",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProofNFT__factory>;
+    getContractFactory(
+      name: "SimplePerformanceOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SimplePerformanceOracle__factory>;
+    getContractFactory(
+      name: "SponsorEscrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SponsorEscrow__factory>;
+    getContractFactory(
+      name: "SponsorPool",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SponsorPool__factory>;
+    getContractFactory(
       name: "TeamNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TeamNFT__factory>;
+    getContractFactory(
+      name: "TeamRecruitment",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TeamRecruitment__factory>;
+    getContractFactory(
+      name: "ValuationOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ValuationOracle__factory>;
 
     getContractAt(
       name: "Ownable",
@@ -103,6 +175,21 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC4906>;
+    getContractAt(
+      name: "ERC20",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20>;
+    getContractAt(
+      name: "IERC20Metadata",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Metadata>;
+    getContractAt(
+      name: "IERC20",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20>;
     getContractAt(
       name: "ERC721",
       address: string | ethers.Addressable,
@@ -144,20 +231,95 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.SafeCast>;
     getContractAt(
+      name: "ReentrancyGuard",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ReentrancyGuard>;
+    getContractAt(
       name: "Strings",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Strings>;
+    getContractAt(
+      name: "IPyth",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IPyth>;
+    getContractAt(
+      name: "IPythEvents",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IPythEvents>;
     getContractAt(
       name: "DriverNFT",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.DriverNFT>;
     getContractAt(
+      name: "FanRewards",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FanRewards>;
+    getContractAt(
+      name: "FinancialFairPlay",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FinancialFairPlay>;
+    getContractAt(
+      name: "MockPerformanceOracle",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockPerformanceOracle>;
+    getContractAt(
+      name: "MockPyth",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockPyth>;
+    getContractAt(
+      name: "MockUSDC",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockUSDC>;
+    getContractAt(
+      name: "PerformanceOracle",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PerformanceOracle>;
+    getContractAt(
+      name: "ProofNFT",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProofNFT>;
+    getContractAt(
+      name: "SimplePerformanceOracle",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SimplePerformanceOracle>;
+    getContractAt(
+      name: "SponsorEscrow",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SponsorEscrow>;
+    getContractAt(
+      name: "SponsorPool",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SponsorPool>;
+    getContractAt(
       name: "TeamNFT",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.TeamNFT>;
+    getContractAt(
+      name: "TeamRecruitment",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TeamRecruitment>;
+    getContractAt(
+      name: "ValuationOracle",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ValuationOracle>;
 
     deployContract(
       name: "Ownable",
@@ -179,6 +341,18 @@ declare module "hardhat/types/runtime" {
       name: "IERC4906",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC4906>;
+    deployContract(
+      name: "ERC20",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20>;
+    deployContract(
+      name: "IERC20Metadata",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Metadata>;
+    deployContract(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20>;
     deployContract(
       name: "ERC721",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -212,17 +386,77 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SafeCast>;
     deployContract(
+      name: "ReentrancyGuard",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReentrancyGuard>;
+    deployContract(
       name: "Strings",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Strings>;
+    deployContract(
+      name: "IPyth",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPyth>;
+    deployContract(
+      name: "IPythEvents",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPythEvents>;
     deployContract(
       name: "DriverNFT",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DriverNFT>;
     deployContract(
+      name: "FanRewards",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FanRewards>;
+    deployContract(
+      name: "FinancialFairPlay",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FinancialFairPlay>;
+    deployContract(
+      name: "MockPerformanceOracle",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPerformanceOracle>;
+    deployContract(
+      name: "MockPyth",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPyth>;
+    deployContract(
+      name: "MockUSDC",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockUSDC>;
+    deployContract(
+      name: "PerformanceOracle",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PerformanceOracle>;
+    deployContract(
+      name: "ProofNFT",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProofNFT>;
+    deployContract(
+      name: "SimplePerformanceOracle",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SimplePerformanceOracle>;
+    deployContract(
+      name: "SponsorEscrow",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SponsorEscrow>;
+    deployContract(
+      name: "SponsorPool",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SponsorPool>;
+    deployContract(
       name: "TeamNFT",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.TeamNFT>;
+    deployContract(
+      name: "TeamRecruitment",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TeamRecruitment>;
+    deployContract(
+      name: "ValuationOracle",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ValuationOracle>;
 
     deployContract(
       name: "Ownable",
@@ -249,6 +483,21 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC4906>;
+    deployContract(
+      name: "ERC20",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ERC20>;
+    deployContract(
+      name: "IERC20Metadata",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Metadata>;
+    deployContract(
+      name: "IERC20",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20>;
     deployContract(
       name: "ERC721",
       args: any[],
@@ -290,20 +539,95 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SafeCast>;
     deployContract(
+      name: "ReentrancyGuard",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReentrancyGuard>;
+    deployContract(
       name: "Strings",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Strings>;
+    deployContract(
+      name: "IPyth",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPyth>;
+    deployContract(
+      name: "IPythEvents",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPythEvents>;
     deployContract(
       name: "DriverNFT",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DriverNFT>;
     deployContract(
+      name: "FanRewards",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FanRewards>;
+    deployContract(
+      name: "FinancialFairPlay",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FinancialFairPlay>;
+    deployContract(
+      name: "MockPerformanceOracle",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPerformanceOracle>;
+    deployContract(
+      name: "MockPyth",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPyth>;
+    deployContract(
+      name: "MockUSDC",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockUSDC>;
+    deployContract(
+      name: "PerformanceOracle",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PerformanceOracle>;
+    deployContract(
+      name: "ProofNFT",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ProofNFT>;
+    deployContract(
+      name: "SimplePerformanceOracle",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SimplePerformanceOracle>;
+    deployContract(
+      name: "SponsorEscrow",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SponsorEscrow>;
+    deployContract(
+      name: "SponsorPool",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SponsorPool>;
+    deployContract(
       name: "TeamNFT",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.TeamNFT>;
+    deployContract(
+      name: "TeamRecruitment",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TeamRecruitment>;
+    deployContract(
+      name: "ValuationOracle",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ValuationOracle>;
 
     // default types
     getContractFactory(

@@ -2,4 +2,16 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { DriverNFT } from "./DriverNFT";
+export type { FanRewards } from "./FanRewards";
+export type { FinancialFairPlay } from "./FinancialFairPlay";
+export type { MockPerformanceOracle } from "./MockPerformanceOracle";
+export type { MockPyth } from "./MockPyth";
+export type { MockUSDC } from "./MockUSDC";
+export type { PerformanceOracle } from "./PerformanceOracle";
+export type { ProofNFT } from "./ProofNFT";
+export type { SimplePerformanceOracle } from "./SimplePerformanceOracle";
+export type { SponsorEscrow } from "./SponsorEscrow";
+export type { SponsorPool } from "./SponsorPool";
 export type { TeamNFT } from "./TeamNFT";
+export type { TeamRecruitment } from "./TeamRecruitment";
+export type { ValuationOracle } from "./ValuationOracle";
