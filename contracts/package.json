@@ -7,11 +7,14 @@
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.ts",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network hedera-testnet",
+    "deploy:all": "hardhat run scripts/deploy-all.ts",
+    "deploy:all:testnet": "hardhat run scripts/deploy-all.ts --network hedera-testnet",
     "clean": "hardhat clean"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.49.2",
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "^5.0.0",
+    "@pythnetwork/pyth-sdk-solidity": "^4.2.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
