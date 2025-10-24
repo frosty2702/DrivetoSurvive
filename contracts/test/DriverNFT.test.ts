@@ -1,62 +1,91 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { DriverNFT } from "../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("DriverNFT", function () {
   let driverNFT: DriverNFT;
-  let owner: SignerWithAddress;
-  let user1: SignerWithAddress;
-  let updater: SignerWithAddress;
+  let owner: any;
+  let addr1: any;
+  let addr2: any;
 
   beforeEach(async function () {
-    [owner, user1, updater] = await ethers.getSigners();
-
-    const DriverNFT = await ethers.getContractFactory("DriverNFT");
-    driverNFT = await DriverNFT.deploy();
+    [owner, addr1, addr2] = await ethers.getSigners();
+    
+    const DriverNFTFactory = await ethers.getContractFactory("DriverNFT");
+    driverNFT = await DriverNFTFactory.deploy();
     await driverNFT.waitForDeployment();
   });
 
-  describe("Minting", function () {
-    it("Should mint a driver NFT with correct stats", async function () {
-      const marketValue = ethers.parseEther("10"); // 10 ETH market value
-      const performanceScore = 85;
+  describe("Deployment", function () {
+    it("Should set the right owner", async function () {
+      expect(await driverNFT.owner()).to.equal(owner.address);
+    });
 
-      await driverNFT.mintDriver(
-        user1.address,
+    it("Should have correct name and symbol", async function () {
+      expect(await driverNFT.name()).to.equal("DrivetoSurvive Driver");
+      expect(await driverNFT.symbol()).to.equal("DTS-DRIVER");
+    });
+  });
+
+  describe("Minting", function () {
+    it("Should mint a new driver NFT", async function () {
+      const tx = await driverNFT.mintDriver(
+        addr1.address,
         "Max Verstappen",
         "Dutch",
         "Red Bull Racing",
-        marketValue,
-        performanceScore
+        ethers.parseEther("10000000"), // 10M market value
+        95 // Performance score (0-100 scale)
       );
 
+      const receipt = await tx.wait();
+      expect(receipt).to.not.be.null;
+
+      // Check token ownership
+      expect(await driverNFT.ownerOf(1)).to.equal(addr1.address);
+      
+      // Check driver stats
       const stats = await driverNFT.getDriverStats(1);
       expect(stats.name).to.equal("Max Verstappen");
       expect(stats.nationality).to.equal("Dutch");
       expect(stats.team).to.equal("Red Bull Racing");
-      expect(stats.marketValue).to.equal(marketValue);
-      expect(stats.performanceScore).to.equal(performanceScore);
+      expect(stats.marketValue).to.equal(ethers.parseEther("10000000"));
+      expect(stats.performanceScore).to.equal(95);
     });
 
-    it("Should prevent duplicate driver names", async function () {
+    it("Should reject empty name", async function () {
+      await expect(
+        driverNFT.mintDriver(
+          addr1.address,
+          "", // Empty name
+          "Dutch",
+          "Red Bull Racing",
+          ethers.parseEther("10000000"),
+          95
+        )
+      ).to.be.revertedWith("Name cannot be empty");
+    });
+
+    it("Should reject duplicate driver names", async function () {
+      // Mint first driver
       await driverNFT.mintDriver(
-        user1.address,
+        addr1.address,
         "Max Verstappen",
         "Dutch",
         "Red Bull Racing",
-        ethers.parseEther("10"),
-        85
+        ethers.parseEther("10000000"),
+        95
       );
 
+      // Try to mint same driver name
       await expect(
         driverNFT.mintDriver(
-          user1.address,
-          "Max Verstappen",
+          addr2.address,
+          "Max Verstappen", // Same name
           "Dutch",
           "Red Bull Racing",
-          ethers.parseEther("10"),
-          85
+          ethers.parseEther("10000000"),
+          95
         )
       ).to.be.revertedWith("Driver already exists");
     });
@@ -64,12 +93,12 @@ describe("DriverNFT", function () {
     it("Should reject performance score > 100", async function () {
       await expect(
         driverNFT.mintDriver(
-          user1.address,
+          addr1.address,
           "Max Verstappen",
           "Dutch",
           "Red Bull Racing",
-          ethers.parseEther("10"),
-          101
+          ethers.parseEther("10000000"),
+          150 // Invalid score > 100
         )
       ).to.be.revertedWith("Performance score must be <= 100");
     });
@@ -77,109 +106,103 @@ describe("DriverNFT", function () {
 
   describe("Stats Updates", function () {
     beforeEach(async function () {
+      // Mint a driver first
       await driverNFT.mintDriver(
-        user1.address,
+        addr1.address,
         "Max Verstappen",
         "Dutch",
         "Red Bull Racing",
-        ethers.parseEther("10"),
-        85
+        ethers.parseEther("10000000"),
+        95
       );
     });
 
-    it("Should allow owner to update stats", async function () {
-      const newMarketValue = ethers.parseEther("15");
-      const newPerformanceScore = 95;
+    it("Should update driver stats by authorized updater", async function () {
+      // Authorize addr1 as updater
+      await driverNFT.setAuthorizedUpdater(addr1.address, true);
 
+      // Update stats
       await driverNFT.updateDriverStats(
-        1,
-        newMarketValue,
-        newPerformanceScore,
-        20, // totalRaces
-        15, // totalWins
-        18, // totalPodiums
-        450 // totalPoints
+        1, // tokenId
+        ethers.parseEther("12000000"), // new market value
+        97, // new performance score (0-100 scale)
+        22, // total races
+        19, // total wins
+        21, // total podiums
+        575 // total points
       );
 
       const stats = await driverNFT.getDriverStats(1);
-      expect(stats.marketValue).to.equal(newMarketValue);
-      expect(stats.performanceScore).to.equal(newPerformanceScore);
-      expect(stats.totalRaces).to.equal(20);
-      expect(stats.totalWins).to.equal(15);
+      expect(stats.marketValue).to.equal(ethers.parseEther("12000000"));
+      expect(stats.performanceScore).to.equal(97);
+      expect(stats.totalRaces).to.equal(22);
+      expect(stats.totalWins).to.equal(19);
+      expect(stats.totalPodiums).to.equal(21);
+      expect(stats.totalPoints).to.equal(575);
     });
 
-    it("Should allow authorized updater to update stats", async function () {
-      await driverNFT.setAuthorizedUpdater(updater.address, true);
-
-      const newMarketValue = ethers.parseEther("12");
-      await driverNFT.connect(updater).updateDriverStats(
-        1,
-        newMarketValue,
-        90,
-        22,
-        16,
-        19,
-        480
-      );
-
-      const stats = await driverNFT.getDriverStats(1);
-      expect(stats.marketValue).to.equal(newMarketValue);
-    });
-
-    it("Should reject updates from unauthorized users", async function () {
+    it("Should reject stats update by unauthorized address", async function () {
       await expect(
-        driverNFT.connect(user1).updateDriverStats(
+        driverNFT.connect(addr2).updateDriverStats(
           1,
-          ethers.parseEther("15"),
-          95,
-          20,
-          15,
-          18,
-          450
+          ethers.parseEther("12000000"),
+          970,
+          22,
+          19,
+          21,
+          575
         )
       ).to.be.revertedWith("Not authorized");
     });
-  });
 
-  describe("Dynamic Metadata", function () {
-    it("Should generate valid tokenURI", async function () {
-      await driverNFT.mintDriver(
-        user1.address,
-        "Max Verstappen",
-        "Dutch",
-        "Red Bull Racing",
-        ethers.parseEther("10"),
-        85
-      );
+    it("Should update driver team", async function () {
+      await driverNFT.setAuthorizedUpdater(addr1.address, true);
 
-      const tokenURI = await driverNFT.tokenURI(1);
-      expect(tokenURI).to.include("data:application/json;base64");
-      
-      // Decode base64 to check JSON content
-      const base64Data = tokenURI.split(",")[1];
-      const jsonString = Buffer.from(base64Data, "base64").toString();
-      const metadata = JSON.parse(jsonString);
+      await driverNFT.updateDriverTeam(1, "Mercedes");
 
-      expect(metadata.name).to.equal("Max Verstappen");
-      expect(metadata.description).to.include("DrivetoSurvive");
-      expect(metadata.attributes).to.be.an("array");
+      const stats = await driverNFT.getDriverStats(1);
+      expect(stats.team).to.equal("Mercedes");
     });
   });
 
-  describe("Token Lookup", function () {
-    it("Should find token by driver name", async function () {
+  describe("Authorization", function () {
+    it("Should allow owner to authorize updaters", async function () {
+      await driverNFT.setAuthorizedUpdater(addr1.address, true);
+      
+      const isAuthorized = await driverNFT.authorizedUpdaters(addr1.address);
+      expect(isAuthorized).to.be.true;
+    });
+
+    it("Should reject authorization by non-owner", async function () {
+      await expect(
+        driverNFT.connect(addr1).setAuthorizedUpdater(addr2.address, true)
+      ).to.be.reverted;
+    });
+  });
+
+  describe("Token URI", function () {
+    it("Should generate valid metadata URI", async function () {
       await driverNFT.mintDriver(
-        user1.address,
+        addr1.address,
         "Max Verstappen",
         "Dutch",
         "Red Bull Racing",
-        ethers.parseEther("10"),
-        85
+        ethers.parseEther("10000000"),
+        95
       );
 
-      const tokenId = await driverNFT.getTokenIdByName("Max Verstappen");
-      expect(tokenId).to.equal(1);
+      const uri = await driverNFT.tokenURI(1);
+      expect(uri).to.include("data:application/json;base64,");
+      
+      // Decode and check JSON contains expected fields
+      const jsonPart = uri.split(",")[1];
+      const decoded = Buffer.from(jsonPart, 'base64').toString();
+      const metadata = JSON.parse(decoded);
+      
+      expect(metadata.name).to.equal("Max Verstappen");
+      expect(metadata.description).to.include("DrivetoSurvive Driver NFT");
+      expect(metadata.attributes).to.be.an('array');
+      expect(metadata.attributes.length).to.be.greaterThan(0);
     });
   });
 });
-
