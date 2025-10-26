@@ -1,39 +1,31 @@
 #!/bin/bash
 
-echo "🏎️ Starting FastF1 API Service..."
+# Start the FastF1 API service
+echo "Starting FastF1 API service..."
+python3 main.py &
+FASTF1_PID=$!
 
-# Check if Python is available
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python3 is not installed. Please install Python 3.8+ to continue."
-    exit 1
+echo "FastF1 API running with PID: $FASTF1_PID"
+echo "API will be available at http://localhost:8000"
+echo "Press Ctrl+C to stop the service"
+
+# Wait for the service to be ready
+sleep 3
+
+# Check if the service is running
+if curl -s http://localhost:8000/health > /dev/null; then
+  echo "✅ FastF1 API is running and healthy"
+  echo "You can now use the following endpoints in your NestJS app:"
+  echo "- POST /f1-data/sync-drivers - Sync driver data"
+  echo "- POST /f1-data/sync-race/:year/:round - Sync specific race results"
+  echo "- POST /f1-data/update-valuations - Update driver valuations"
+  echo "- POST /f1-data/sync-all - Sync all data"
+else
+  echo "❌ FastF1 API failed to start"
+  kill $FASTF1_PID
+  exit 1
 fi
 
-# Check if pip is available
-if ! command -v pip3 &> /dev/null; then
-    echo "❌ pip3 is not installed. Please install pip3 to continue."
-    exit 1
-fi
-
-# Install dependencies if requirements.txt exists
-if [ -f "requirements.txt" ]; then
-    echo "📦 Installing Python dependencies..."
-    pip3 install -r requirements.txt
-fi
-
-# Start the FastAPI server
-echo "🚀 Starting FastF1 API on http://localhost:8000"
-echo "📊 Available endpoints:"
-echo "   - GET /health - Health check"
-echo "   - GET /drivers/{year} - Get drivers for a season"
-echo "   - GET /driver-performance/{year} - Get driver performance metrics"
-echo "   - GET /championship-standings/{year} - Get championship standings"
-echo "   - GET /race-calendar/{year} - Get race calendar"
-echo "   - GET /team-analysis/{year} - Get team analysis"
-echo "   - GET /session/{year}/{round}/{session_type} - Get session data"
-echo "   - GET /telemetry/{year}/{round}/{driver} - Get driver telemetry"
-echo "   - GET /lap-times/{year}/{round} - Get lap times"
-echo ""
-echo "🔗 API Documentation: http://localhost:8000/docs"
-echo ""
-
-python3 main.py
+# Keep the script running until Ctrl+C
+trap "echo 'Stopping FastF1 API...'; kill $FASTF1_PID; exit 0" INT
+wait $FASTF1_PID
