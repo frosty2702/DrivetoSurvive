@@ -62,7 +62,7 @@ const MintNFTButton: React.FC<MintNFTButtonProps> = ({ driverName, tokenId, carN
       
       // Check if we're on Sepolia
       const network = await provider.getNetwork();
-      if (network.chainId !== 11155111n) {
+      if (network.chainId !== BigInt(11155111)) {
         alert('Please switch to Sepolia testnet in your MetaMask wallet');
         setIsMinting(false);
         return;
