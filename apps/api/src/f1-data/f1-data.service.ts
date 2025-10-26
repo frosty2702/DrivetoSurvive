@@ -1,178 +1,335 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-
-export interface DriverPerformance {
-  year: number;
-  round: number;
-  event_name: string;
-  driver: string;
-  driver_name: string;
-  team: string;
-  position: number;
-  points: number;
-  fastest_lap_time: string;
-  average_lap_time: string;
-  consistency_score: number;
-  laps_completed: number;
-  total_race_time: string;
-}
-
-export interface ChampionshipStandings {
-  year: number;
-  driver_standings: any[];
-  constructor_standings: any[];
-}
-
-export interface RaceCalendar {
-  year: number;
-  total_events: number;
-  calendar: Array<{
-    round: number;
-    event_name: string;
-    location: string;
-    country: string;
-    event_format: string;
-    date_start: string;
-    f1_support_series: string;
-  }>;
-}
-
-export interface TeamAnalysis {
-  year: number;
-  teams: Array<{
-    team_name: string;
-    races: number;
-    total_points: number;
-    drivers: string[];
-    positions: number[];
-    fastest_laps: number;
-    avg_position: number;
-  }>;
-}
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import axios from 'axios';
 
 @Injectable()
 export class F1DataService {
-  constructor(private readonly httpService: HttpService) {}
+  private readonly logger = new Logger(F1DataService.name);
+  private readonly fastF1ApiUrl = 'http://localhost:8000'; // FastF1 API microservice URL
 
-  private readonly FASTF1_BASE_URL = 'http://localhost:8000';
+  constructor(private prisma: PrismaService) {}
 
-  async getF1Data(endpoint: string) {
+  /**
+   * Fetch driver data from FastF1 API and update the database
+   */
+  async syncDriverData(year: number = 2024): Promise<any> {
     try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.FASTF1_BASE_URL}${endpoint}`)
-      );
-      return response.data;
+      this.logger.log(`Syncing driver data for ${year} season...`);
+      
+      // Get drivers from FastF1 API
+      const driversResponse = await axios.get(`${this.fastF1ApiUrl}/drivers/${year}`);
+      const drivers = driversResponse.data.drivers;
+      
+      // Get championship standings
+      const standingsResponse = await axios.get(`${this.fastF1ApiUrl}/championship-standings/${year}`);
+      const driverStandings = standingsResponse.data.driver_standings;
+      
+      // Get driver performance metrics
+      const performanceResponse = await axios.get(`${this.fastF1ApiUrl}/driver-performance/${year}`);
+      const performanceData = performanceResponse.data.performance_data;
+      
+      // Process and update database
+      let updatedCount = 0;
+      const processedTeams = new Set();
+      
+      for (const driver of drivers) {
+        // Find driver in standings
+        const standing = driverStandings.find(s => s.DriverId === driver.abbreviation);
+        
+        // Find performance metrics
+        const performances = performanceData.filter(p => p.driver === driver.abbreviation);
+        const avgPerformance = performances.length > 0 
+          ? performances.reduce((sum, p) => sum + p.consistency_score, 0) / performances.length
+          : 0.5;
+        
+        // Create or update team
+        if (!processedTeams.has(driver.team)) {
+          const team = await this.prisma.team.upsert({
+            where: { name: driver.team },
+            update: {
+              teamConstructor: driver.team,
+              // Update other fields if needed
+            },
+            create: {
+              name: driver.team,
+              teamConstructor: driver.team,
+              nationality: 'Unknown', // Would need additional API call to get this
+              budget: 400000000, // Default budget
+              sponsorValue: Math.random() * 50000000, // Random sponsor value
+            },
+          });
+          processedTeams.add(driver.team);
+          this.logger.debug(`Team ${driver.team} processed`);
+        }
+        
+        // Calculate market value based on performance and standings
+        const points = standing ? parseFloat(standing.points) : 0;
+        const position = standing ? parseInt(standing.position) : 20;
+        const marketValue = this.calculateMarketValue(points, position, avgPerformance);
+        const performanceScore = this.calculatePerformanceScore(points, position, avgPerformance);
+        
+        // Get team ID
+        const team = await this.prisma.team.findUnique({
+          where: { name: driver.team }
+        });
+        
+        if (!team) {
+          this.logger.warn(`Team ${driver.team} not found for driver ${driver.full_name}`);
+          continue;
+        }
+        
+        // Create or update driver
+        await this.prisma.driver.upsert({
+          where: { 
+            // Use a combination of name and team as unique identifier
+            id: `${driver.full_name}-${driver.team}`.replace(/\s+/g, '-').toLowerCase()
+          },
+          update: {
+            teamId: team.id,
+            totalPoints: points,
+            totalWins: standing ? parseInt(standing.wins) : 0,
+            performanceScore,
+            marketValue,
+          },
+          create: {
+            id: `${driver.full_name}-${driver.team}`.replace(/\s+/g, '-').toLowerCase(),
+            name: driver.full_name,
+            nationality: 'Unknown', // Would need additional API call
+            dateOfBirth: new Date(), // Would need additional API call
+            teamId: team.id,
+            totalPoints: points,
+            totalWins: standing ? parseInt(standing.wins) : 0,
+            totalRaces: performances.length,
+            totalPodiums: performances.filter(p => p.position <= 3).length,
+            performanceScore,
+            marketValue,
+            nftTokenId: driver.driver_number,
+          },
+        });
+        
+        updatedCount++;
+        this.logger.debug(`Driver ${driver.full_name} processed`);
+      }
+      
+      return {
+        success: true,
+        message: 'F1 data synchronized successfully',
+        driversUpdated: updatedCount,
+        teamsUpdated: processedTeams.size,
+      };
     } catch (error) {
-      throw new HttpException(
-        `Failed to fetch F1 data: ${error.message}`,
-        HttpStatus.BAD_GATEWAY
-      );
+      this.logger.error(`Failed to sync F1 data: ${error.message}`, error.stack);
+      return {
+        success: false,
+        error: 'Failed to sync F1 data',
+        details: error.message,
+      };
     }
   }
-
-  async getDriverPerformance(year: number): Promise<DriverPerformance[]> {
-    const data = await this.getF1Data(`/driver-performance/${year}`);
-    return data.performance_data;
-  }
-
-  async getChampionshipStandings(year: number): Promise<ChampionshipStandings> {
-    return this.getF1Data(`/championship-standings/${year}`);
-  }
-
-  async getRaceCalendar(year: number): Promise<RaceCalendar> {
-    return this.getF1Data(`/race-calendar/${year}`);
-  }
-
-  async getTeamAnalysis(year: number): Promise<TeamAnalysis> {
-    return this.getF1Data(`/team-analysis/${year}`);
-  }
-
-  async getSessionData(year: number, round: number, sessionType: string) {
-    return this.getF1Data(`/session/${year}/${round}/${sessionType}`);
-  }
-
-  async getDriverTelemetry(year: number, round: number, driver: string) {
-    return this.getF1Data(`/telemetry/${year}/${round}/${driver}`);
-  }
-
-  async getLapTimes(year: number, round: number, driver?: string) {
-    const endpoint = driver 
-      ? `/lap-times/${year}/${round}?driver=${driver}`
-      : `/lap-times/${year}/${round}`;
-    return this.getF1Data(endpoint);
-  }
-
-  async getDriverSeasonSummary(driverName: string, year: number) {
-    const performanceData = await this.getDriverPerformance(year);
-    const driverRaces = performanceData.filter(race => 
-      race.driver_name.toLowerCase().includes(driverName.toLowerCase())
-    );
-
-    if (driverRaces.length === 0) {
-      throw new HttpException('Driver not found', HttpStatus.NOT_FOUND);
+  
+  /**
+   * Fetch race results and update performance metrics
+   */
+  async syncRaceResults(year: number = 2024, round: number = 1): Promise<any> {
+    try {
+      this.logger.log(`Syncing race results for ${year} R${round}...`);
+      
+      // Get session data from FastF1 API
+      const sessionResponse = await axios.get(`${this.fastF1ApiUrl}/session/${year}/${round}/R`);
+      const sessionData = sessionResponse.data;
+      
+      // Get lap times
+      const lapTimesResponse = await axios.get(`${this.fastF1ApiUrl}/lap-times/${year}/${round}`);
+      const lapTimes = lapTimesResponse.data.laps;
+      
+      let metricsCreated = 0;
+      
+      // Process each driver's results
+      for (const result of sessionData.results) {
+        // Find driver in database
+        const driver = await this.prisma.driver.findFirst({
+          where: {
+            name: { contains: result.full_name }
+          }
+        });
+        
+        if (!driver) {
+          this.logger.warn(`Driver ${result.full_name} not found in database`);
+          continue;
+        }
+        
+        // Calculate metrics
+        const driverLaps = lapTimes.filter(lap => lap.driver === result.driver_abbr);
+        const fastestLap = driverLaps.reduce((fastest, lap) => {
+          if (!fastest.lap_time || (lap.lap_time && lap.lap_time < fastest.lap_time)) {
+            return lap;
+          }
+          return fastest;
+        }, { lap_time: null });
+        
+        // Create performance metric
+        await this.prisma.performanceMetric.upsert({
+          where: {
+            driverId_raceId: {
+              driverId: driver.id,
+              raceId: `${year}-${round}`
+            }
+          },
+          update: {
+            position: result.position,
+            points: result.points,
+            fastestLap: fastestLap.is_personal_best || false,
+            lapTime: fastestLap.lap_time || null,
+            attested: true, // Verified by FastF1 API
+            attestationHash: `fastf1-${year}-${round}-${result.driver_abbr}`,
+            attestedBy: 'FastF1 API',
+          },
+          create: {
+            driverId: driver.id,
+            raceId: `${year}-${round}`,
+            raceName: sessionData.event_name,
+            season: year,
+            raceDate: new Date(), // Would need to extract from session data
+            position: result.position,
+            points: result.points,
+            fastestLap: fastestLap.is_personal_best || false,
+            polePosition: result.grid_position === 1,
+            lapTime: fastestLap.lap_time || null,
+            attested: true,
+            attestationHash: `fastf1-${year}-${round}-${result.driver_abbr}`,
+            attestedBy: 'FastF1 API',
+          }
+        });
+        
+        metricsCreated++;
+      }
+      
+      return {
+        success: true,
+        message: `Race results for ${year} R${round} synchronized successfully`,
+        metricsCreated,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to sync race results: ${error.message}`, error.stack);
+      return {
+        success: false,
+        error: 'Failed to sync race results',
+        details: error.message,
+      };
     }
-
-    const totalPoints = driverRaces.reduce((sum, race) => sum + race.points, 0);
-    const avgPosition = driverRaces.reduce((sum, race) => sum + race.position, 0) / driverRaces.length;
-    const avgConsistency = driverRaces.reduce((sum, race) => sum + race.consistency_score, 0) / driverRaces.length;
-    const podiums = driverRaces.filter(race => race.position <= 3).length;
-    const wins = driverRaces.filter(race => race.position === 1).length;
-
-    return {
-      driver_name: driverRaces[0].driver_name,
-      team: driverRaces[0].team,
-      year,
-      races_participated: driverRaces.length,
-      total_points: totalPoints,
-      average_position: Math.round(avgPosition * 100) / 100,
-      average_consistency: Math.round(avgConsistency * 100) / 100,
-      podiums,
-      wins,
-      performance_trend: driverRaces.map(race => ({
-        round: race.round,
-        position: race.position,
-        points: race.points,
-        consistency_score: race.consistency_score
-      }))
-    };
   }
-
-  async getTeamSeasonSummary(teamName: string, year: number) {
-    const teamAnalysis = await this.getTeamAnalysis(year);
-    const team = teamAnalysis.teams.find(t => 
-      t.team_name.toLowerCase().includes(teamName.toLowerCase())
-    );
-
-    if (!team) {
-      throw new HttpException('Team not found', HttpStatus.NOT_FOUND);
+  
+  /**
+   * Update driver valuations based on performance metrics
+   */
+  async updateDriverValuations(): Promise<any> {
+    try {
+      this.logger.log('Updating driver valuations...');
+      
+      // Get all drivers with their performance metrics
+      const drivers = await this.prisma.driver.findMany({
+        include: {
+          performanceMetrics: true,
+        },
+      });
+      
+      let updatedCount = 0;
+      
+      for (const driver of drivers) {
+        // Calculate new performance score and market value
+        const metrics = driver.performanceMetrics;
+        
+        if (metrics.length === 0) {
+          continue; // Skip drivers with no metrics
+        }
+        
+        // Calculate performance score based on recent results
+        const totalPoints = metrics.reduce((sum, metric) => sum + metric.points, 0);
+        const avgPosition = metrics.reduce((sum, metric) => sum + (metric.position || 20), 0) / metrics.length;
+        const recentForm = metrics
+          .sort((a, b) => b.raceDate.getTime() - a.raceDate.getTime()) // Sort by most recent
+          .slice(0, 3) // Last 3 races
+          .reduce((sum, metric) => sum + (metric.points / 3), 0); // Average points
+          
+        const performanceScore = this.calculatePerformanceScore(
+          totalPoints,
+          avgPosition,
+          recentForm / 10 // Scale recent form to 0-1 range
+        );
+        
+        // Calculate market value based on performance
+        const marketValue = this.calculateMarketValue(
+          totalPoints,
+          avgPosition,
+          recentForm / 10
+        );
+        
+        // Update driver
+        await this.prisma.driver.update({
+          where: { id: driver.id },
+          data: {
+            performanceScore,
+            marketValue,
+          },
+        });
+        
+        updatedCount++;
+      }
+      
+      return {
+        success: true,
+        message: 'Driver valuations updated successfully',
+        driversUpdated: updatedCount,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to update driver valuations: ${error.message}`, error.stack);
+      return {
+        success: false,
+        error: 'Failed to update driver valuations',
+        details: error.message,
+      };
     }
-
-    return {
-      team_name: team.team_name,
-      year,
-      races: team.races,
-      total_points: team.total_points,
-      drivers: team.drivers,
-      average_position: Math.round(team.avg_position * 100) / 100,
-      fastest_laps: team.fastest_laps,
-      points_per_race: Math.round((team.total_points / team.races) * 100) / 100
-    };
   }
-
-  async getCurrentSeasonData(year: number = new Date().getFullYear()) {
-    const [standings, calendar, teamAnalysis] = await Promise.all([
-      this.getChampionshipStandings(year),
-      this.getRaceCalendar(year),
-      this.getTeamAnalysis(year)
-    ]);
-
-    return {
-      year,
-      standings,
-      calendar,
-      team_analysis: teamAnalysis,
-      last_updated: new Date().toISOString()
-    };
+  
+  /**
+   * Calculate driver performance score (0-100)
+   */
+  private calculatePerformanceScore(
+    points: number,
+    position: number,
+    performanceFactor: number
+  ): number {
+    // Base score from points (0-50)
+    const pointsScore = Math.min(points / 4, 50);
+    
+    // Position factor (0-30)
+    const positionScore = Math.max(0, 30 - (position * 1.5));
+    
+    // Performance factor (0-20)
+    const performanceBonus = performanceFactor * 20;
+    
+    // Combine scores and ensure range 0-100
+    return Math.min(100, Math.max(0, pointsScore + positionScore + performanceBonus));
+  }
+  
+  /**
+   * Calculate driver market value in USD
+   */
+  private calculateMarketValue(
+    points: number,
+    position: number,
+    performanceFactor: number
+  ): number {
+    // Base value from points
+    const baseValue = points * 100000;
+    
+    // Position multiplier (better positions get higher values)
+    const positionMultiplier = Math.max(0.5, 2 - (position * 0.1));
+    
+    // Performance bonus (0-50% extra)
+    const performanceBonus = 1 + (performanceFactor * 0.5);
+    
+    // Combine factors
+    return baseValue * positionMultiplier * performanceBonus;
   }
 }
