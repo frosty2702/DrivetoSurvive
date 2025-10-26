@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES } from '../config/contracts';
+import { CONTRACTS } from '../config/contracts';
 
 // ABI for the DriverNFT contract (just the mint function)
 const DRIVER_NFT_ABI = [
@@ -72,7 +72,7 @@ const MintNFTButton: React.FC<MintNFTButtonProps> = ({ driverName, tokenId, carN
       
       // Create contract instance
       const driverNFT = new ethers.Contract(
-        CONTRACT_ADDRESSES.DriverNFT,
+        CONTRACTS.sepolia.driverNFT,
         DRIVER_NFT_ABI,
         signer
       );
