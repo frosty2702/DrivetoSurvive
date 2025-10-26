@@ -16,17 +16,12 @@ const config: HardhatUserConfig = {
     }
   },
   networks: {
-    // Hedera Testnet
-    "hedera-testnet": {
-      url: "https://testnet.hashio.io/api",
-      accounts: process.env.HEDERA_PRIVATE_KEY ? [process.env.HEDERA_PRIVATE_KEY] : [],
-      chainId: 296
-    },
-    // Hedera Mainnet
-    "hedera-mainnet": {
-      url: "https://mainnet.hashio.io/api",
-      accounts: process.env.HEDERA_PRIVATE_KEY ? [process.env.HEDERA_PRIVATE_KEY] : [],
-      chainId: 295
+    // Sepolia Testnet - Ethereum's recommended testnet
+    "sepolia": {
+      url: "https://ethereum-sepolia.publicnode.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 11155111,
+      gasMultiplier: 1.2
     },
     // Local development
     hardhat: {
