@@ -202,15 +202,15 @@ async function main() {
         
         console.log(`    ✅ Processed ${driversInRace} drivers for ${race.event_name}`);
         racesProcessed++;
-      } catch (error) {
-        console.error(`    ❌ Error processing race ${race.event_name}: ${error.message}`);
+      } catch (error: any) {
+        console.error(`    ❌ Error processing race ${race.event_name}: ${error?.message || 'Unknown error'}`);
       }
     }
     
     // Step 6: Update driver valuations based on performance
     console.log('\n💰 Updating driver valuations...');
     
-    const drivers = await prisma.driver.findMany({
+    const dbDrivers = await prisma.driver.findMany({
       include: {
         performanceMetrics: true,
       },
@@ -218,7 +218,7 @@ async function main() {
     
     let valuationsUpdated = 0;
     
-    for (const driver of drivers) {
+    for (const driver of dbDrivers) {
       // Skip drivers with no metrics
       if (driver.performanceMetrics.length === 0) continue;
       
@@ -270,8 +270,8 @@ async function main() {
     console.log(`  ✅ Races processed: ${racesProcessed}`);
     console.log(`  ✅ Driver valuations updated: ${valuationsUpdated}`);
     
-  } catch (error) {
-    console.error(`\n❌ Error syncing F1 data: ${error.message}`);
+  } catch (error: any) {
+    console.error(`\n❌ Error syncing F1 data: ${error?.message || 'Unknown error'}`);
     console.error(error);
     process.exit(1);
   } finally {
