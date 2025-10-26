@@ -34,12 +34,12 @@ export class F1DataService {
       
       for (const driver of drivers) {
         // Find driver in standings
-        const standing = driverStandings.find(s => s.DriverId === driver.abbreviation);
+        const standing = driverStandings?.find((s: any) => s.DriverId === driver.abbreviation);
         
         // Find performance metrics
-        const performances = performanceData.filter(p => p.driver === driver.abbreviation);
+        const performances = performanceData?.filter((p: any) => p.driver === driver.abbreviation) || [];
         const avgPerformance = performances.length > 0 
-          ? performances.reduce((sum, p) => sum + p.consistency_score, 0) / performances.length
+          ? performances.reduce((sum: number, p: any) => sum + (p.consistency_score || 0), 0) / performances.length
           : 0.5;
         
         // Create or update team
@@ -117,12 +117,12 @@ export class F1DataService {
         driversUpdated: updatedCount,
         teamsUpdated: processedTeams.size,
       };
-    } catch (error) {
-      this.logger.error(`Failed to sync F1 data: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`Failed to sync F1 data: ${error?.message || 'Unknown error'}`, error?.stack);
       return {
         success: false,
         error: 'Failed to sync F1 data',
-        details: error.message,
+        details: error?.message || 'Unknown error',
       };
     }
   }
@@ -159,9 +159,11 @@ export class F1DataService {
         }
         
         // Calculate metrics
-        const driverLaps = lapTimes.filter(lap => lap.driver === result.driver_abbr);
-        const fastestLap = driverLaps.reduce((fastest, lap) => {
-          if (!fastest.lap_time || (lap.lap_time && lap.lap_time < fastest.lap_time)) {
+        const driverLaps = lapTimes?.filter((lap: any) => lap.driver === result.driver_abbr) || [];
+        const fastestLap = driverLaps.reduce((fastest: any, lap: any) => {
+          const fastestTime = fastest.lap_time ? parseFloat(fastest.lap_time) : Infinity;
+          const lapTime = lap.lap_time ? parseFloat(lap.lap_time) : Infinity;
+          if (lapTime < fastestTime) {
             return lap;
           }
           return fastest;
@@ -209,12 +211,12 @@ export class F1DataService {
         message: `Race results for ${year} R${round} synchronized successfully`,
         metricsCreated,
       };
-    } catch (error) {
-      this.logger.error(`Failed to sync race results: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`Failed to sync race results: ${error?.message || 'Unknown error'}`, error?.stack);
       return {
         success: false,
         error: 'Failed to sync race results',
-        details: error.message,
+        details: error?.message || 'Unknown error',
       };
     }
   }
@@ -244,12 +246,16 @@ export class F1DataService {
         }
         
         // Calculate performance score based on recent results
-        const totalPoints = metrics.reduce((sum, metric) => sum + metric.points, 0);
-        const avgPosition = metrics.reduce((sum, metric) => sum + (metric.position || 20), 0) / metrics.length;
+        const totalPoints = metrics.reduce((sum: number, metric: any) => sum + (metric.points || 0), 0);
+        const avgPosition = metrics.reduce((sum: number, metric: any) => sum + (metric.position || 20), 0) / metrics.length;
         const recentForm = metrics
-          .sort((a, b) => b.raceDate.getTime() - a.raceDate.getTime()) // Sort by most recent
+          .sort((a: any, b: any) => {
+            const dateA = a.raceDate instanceof Date ? a.raceDate.getTime() : new Date(a.raceDate).getTime();
+            const dateB = b.raceDate instanceof Date ? b.raceDate.getTime() : new Date(b.raceDate).getTime();
+            return dateB - dateA;
+          })
           .slice(0, 3) // Last 3 races
-          .reduce((sum, metric) => sum + (metric.points / 3), 0); // Average points
+          .reduce((sum: number, metric: any) => sum + ((metric.points || 0) / 3), 0); // Average points
           
         const performanceScore = this.calculatePerformanceScore(
           totalPoints,
@@ -281,12 +287,12 @@ export class F1DataService {
         message: 'Driver valuations updated successfully',
         driversUpdated: updatedCount,
       };
-    } catch (error) {
-      this.logger.error(`Failed to update driver valuations: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`Failed to update driver valuations: ${error?.message || 'Unknown error'}`, error?.stack);
       return {
         success: false,
         error: 'Failed to update driver valuations',
-        details: error.message,
+        details: error?.message || 'Unknown error',
       };
     }
   }

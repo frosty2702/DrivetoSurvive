@@ -43,11 +43,11 @@ export class F1DataController {
       try {
         const result = await this.f1DataService.syncRaceResults(year, round);
         raceResults.push(result);
-      } catch (error) {
+      } catch (error: any) {
         raceResults.push({
           success: false,
           round,
-          error: error.message,
+          error: error?.message || 'Unknown error',
         });
       }
     }
