@@ -74,5 +74,7 @@ export type { TeamNFT } from "./contracts/TeamNFT";
 export { TeamNFT__factory } from "./factories/contracts/TeamNFT__factory";
 export type { TeamRecruitment } from "./contracts/TeamRecruitment";
 export { TeamRecruitment__factory } from "./factories/contracts/TeamRecruitment__factory";
+export type { TestDeployment } from "./contracts/TestDeployment";
+export { TestDeployment__factory } from "./factories/contracts/TestDeployment__factory";
 export type { ValuationOracle } from "./contracts/ValuationOracle";
 export { ValuationOracle__factory } from "./factories/contracts/ValuationOracle__factory";

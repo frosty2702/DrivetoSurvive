@@ -14,4 +14,5 @@ export type { SponsorEscrow } from "./SponsorEscrow";
 export type { SponsorPool } from "./SponsorPool";
 export type { TeamNFT } from "./TeamNFT";
 export type { TeamRecruitment } from "./TeamRecruitment";
+export type { TestDeployment } from "./TestDeployment";
 export type { ValuationOracle } from "./ValuationOracle";

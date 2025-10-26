@@ -14,4 +14,5 @@ export { SponsorEscrow__factory } from "./SponsorEscrow__factory";
 export { SponsorPool__factory } from "./SponsorPool__factory";
 export { TeamNFT__factory } from "./TeamNFT__factory";
 export { TeamRecruitment__factory } from "./TeamRecruitment__factory";
+export { TestDeployment__factory } from "./TestDeployment__factory";
 export { ValuationOracle__factory } from "./ValuationOracle__factory";
