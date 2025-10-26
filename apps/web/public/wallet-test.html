@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MetaMask Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #2ecc71;
+      color: white;
+    }
+    .error {
+      background-color: #e74c3c;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>MetaMask Connection Test</h1>
+  <p>This is a standalone HTML file to test MetaMask connection.</p>
+  
+  <button id="connectBtn">Connect Wallet</button>
+  <div id="status"></div>
+
+  <script>
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+      const statusDiv = document.getElementById('status');
+      
+      // Clear previous status
+      statusDiv.innerHTML = '';
+      statusDiv.className = '';
+      
+      try {
+        // Check if MetaMask is installed
+        if (!window.ethereum) {
+          throw new Error('MetaMask is not installed!');
+        }
+        
+        console.log('Requesting accounts...');
+        
+        // Request accounts
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        });
+        
+        console.log('Accounts:', accounts);
+        
+        if (accounts && accounts.length > 0) {
+          statusDiv.innerHTML = `Connected: ${accounts[0]}`;
+          statusDiv.className = 'success';
+        } else {
+          throw new Error('No accounts found');
+        }
+      } catch (error) {
+        console.error('Error connecting to MetaMask:', error);
+        statusDiv.innerHTML = `Error: ${error.message}`;
+        statusDiv.className = 'error';
+      }
+    });
+  </script>
+</body>
+</html>
